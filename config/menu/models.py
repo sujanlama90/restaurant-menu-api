@@ -13,7 +13,8 @@ class Category(models.Model):
     updated_at =models.DateTimeField(auto_now_add=True)
     class Meta: constraints = [models.UniqueConstraint( 
         Lower("name"),
-        name="unique_category_name_ci" ) ] 
+        name="unique_category_name_ci" ) 
+        ] 
 
 
 class FoodItem(models.Model):

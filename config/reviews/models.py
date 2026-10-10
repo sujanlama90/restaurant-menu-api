@@ -6,7 +6,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 class Review(models.Model):
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='reviews')
-    food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
+    food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE,related_name='reviews')
     rating = models.PositiveIntegerField(validators=[
             MinValueValidator(1),
             MaxValueValidator(5),
@@ -24,3 +24,5 @@ class Review(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f"{self.customer} - {self.food_item} ({self.rating}/5)"
