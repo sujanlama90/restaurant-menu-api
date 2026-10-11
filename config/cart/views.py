@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, MethodNotAllowed
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.throttling import ScopedRateThrottle
 
 from django.db import transaction
 from .models import Cart, CartItem
@@ -12,6 +13,8 @@ class CartView(viewsets.ModelViewSet):
     serializer_class = CartSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    throttle_scope ='cart' #for custom thottle 
+    throttle_classes=[ScopedRateThrottle]
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 

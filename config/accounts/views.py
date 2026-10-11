@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import authentication,permissions
-from rest_framework.throttling import AnonRateThrottle ,UserRateThrottle
+from rest_framework.throttling import UserRateThrottle,ScopedRateThrottle
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -21,27 +21,35 @@ class CustomerRegisterView(viewsets.ModelViewSet):
     queryset=CustomUser.objects.filter(role = 'CUSTOMER')
     serializer_class=CustomerRegisterSerailizer
     permission_classes=[permissions.AllowAny]
-    throttle_classes=[AnonRateThrottle,UserRateThrottle]
+    # throttle_classes=[AnonRateThrottle,UserRateThrottle]
+    throttle_scope ='register' #for custom thottle 
+    throttle_classes=[ScopedRateThrottle]
     http_method_names = ['get', 'post', 'delete']
     
 class StaffRegisterView(viewsets.ModelViewSet):
     queryset=CustomUser.objects.filter(role='STAFF')
     serializer_class=StaffRegisterSerailizer
     permission_classes=[permissions.AllowAny]
-    throttle_classes=[AnonRateThrottle,UserRateThrottle]
+    # throttle_classes=[AnonRateThrottle,UserRateThrottle]
+    throttle_scope ='register' #for custom thottle 
+    throttle_classes=[ScopedRateThrottle]
     http_method_names = ['get', 'post', 'delete']
 
 class AdminRegisterView(viewsets.ModelViewSet):
     queryset=CustomUser.objects.filter(role ='ADMIN')
     serializer_class=AdminSerailizer
     permission_classes=[permissions.AllowAny]
-    throttle_classes=[AnonRateThrottle,UserRateThrottle]
+    # throttle_classes=[AnonRateThrottle,UserRateThrottle]
+    throttle_scope ='register' #for custom thottle 
+    throttle_classes=[ScopedRateThrottle]
     http_method_names = ['get', 'post', 'delete']
 
 class LoginView(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     authentication_classes=[]
     permission_classes = [permissions.AllowAny]
+    throttle_scope ='login' #for custom thottle 
+    throttle_classes=[ScopedRateThrottle]
     http_method_names = ['post']
 
     def create(self, request, *args, **kwargs):
@@ -76,6 +84,7 @@ class Profile(viewsets.ModelViewSet):
     serializer_class=UserProfileSerializer
     authentication_classes=[JWTAuthentication]
     permission_classes=[permissions.IsAuthenticated]
+    throttle_classes=[UserRateThrottle]
     http_method_names = ['get', 'patch', 'put', 'head', 'options']
     '''
     CUSTOMER: Can only view their own profile.

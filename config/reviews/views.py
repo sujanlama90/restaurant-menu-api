@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.throttling import ScopedRateThrottle
 
 from django.db.models import Q
 from .models import Review
@@ -15,6 +16,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [ReviewPermission]
+    throttle_scope ='reviews'
+    throttle_classes=[ScopedRateThrottle]
     pagination_class=CustomPagination
 
     filter_backends = [

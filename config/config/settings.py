@@ -79,9 +79,13 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
     ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '10/minute',
-        'user': '15/minute',
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/hour",
+        "user": "300/hour",
+        "login": "10/minute",
+        "register": "5/hour",
+        "cart": "60/hour",
+        "reviews": "20/hour",
     },
     "DEFAULT_PAGINATION_CLASS":
     "rest_framework.pagination.PageNumberPagination",
