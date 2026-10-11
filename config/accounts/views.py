@@ -15,6 +15,7 @@ from django.contrib.auth import authenticate
 from .serailizer import CustomerRegisterSerailizer,StaffRegisterSerailizer,AdminSerailizer,UserProfileSerializer,UserListSerializer
 from .models import CustomUser
 from .permissions import IsAdminRole
+from .custom_pagination import CustomPagination
 
 class CustomerRegisterView(viewsets.ModelViewSet):
     queryset=CustomUser.objects.filter(role = 'CUSTOMER')
@@ -128,6 +129,7 @@ class UserListView(viewsets.ModelViewSet):
     queryset=CustomUser.objects.all().order_by('id')
     serializer_class=UserListSerializer
     permission_classes=[permissions.IsAuthenticated,IsAdminRole]
+    pagination_class=CustomPagination
 
     @action(detail=True, methods=['patch'], url_path='role')
     def update_role(self, request, pk=None):

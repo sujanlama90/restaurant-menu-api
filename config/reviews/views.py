@@ -9,11 +9,13 @@ from django.db.models import Q
 from .models import Review
 from .serializer import ReviewSerializer
 from .permissions import ReviewPermission
+from .custom_pagination import CustomPagination
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [ReviewPermission]
+    pagination_class=CustomPagination
 
     filter_backends = [
         DjangoFilterBackend,

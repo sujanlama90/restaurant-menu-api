@@ -6,6 +6,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, filters
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from .models import Category,FoodItem
 from .serailizer import CategorySerializer,FoodItemSerializer
 from .permissions import IsRestaurantStaff
@@ -35,6 +38,17 @@ class Categories(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.is_active = False
         instance.save(update_fields=["is_active"])
+
+    @method_decorator(cache_page(300))
+    @method_decorator(vary_on_cookie)
+    def list(self, request, *args, **kwargs):
+        print('database hit')
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        import time 
+        time.sleep(5)
+        return super().get_queryset()
 
 class FoodItemView(viewsets.ModelViewSet):
     serializer_class=FoodItemSerializer
@@ -81,4 +95,13 @@ class FoodItemView(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.is_available = False
         instance.save(update_fields=['is_available'])
-    
+
+    @method_decorator(cache_page(300))
+    @method_decorator(vary_on_cookie)
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @method_decorator(cache_page(300))
+    @method_decorator(vary_on_cookie)
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
