@@ -26,14 +26,44 @@ class CustomerRegisterView(viewsets.ModelViewSet):
     throttle_classes=[ScopedRateThrottle]
     http_method_names = ['get', 'post', 'delete']
     
+
 class StaffRegisterView(viewsets.ModelViewSet):
-    queryset=CustomUser.objects.filter(role='STAFF')
-    serializer_class=StaffRegisterSerailizer
-    permission_classes=[permissions.AllowAny]
-    # throttle_classes=[AnonRateThrottle,UserRateThrottle]
-    throttle_scope ='register' #for custom thottle 
-    throttle_classes=[ScopedRateThrottle]
-    http_method_names = ['get', 'post', 'delete']
+    queryset = CustomUser.objects.filter(role="STAFF")
+    serializer_class = StaffRegisterSerailizer
+    throttle_scope = "register"
+    throttle_classes = [ScopedRateThrottle]
+    http_method_names = ["get", "post", "delete"]
+
+    def get_permissions(self):
+        # Anyone can register as staff.
+        if self.action == "create":
+            permission_classes = [permissions.AllowAny]
+        else:
+            # Only ADMIN can view, delete, or approve staff.
+            permission_classes = [permissions.IsAuthenticated, IsAdminRole]
+
+        return [permission() for permission in permission_classes]
+
+    @action(detail=True, methods=["post"], url_path="approve")
+    def approve_staff(self, request, pk=None):
+        staff = self.get_object()
+
+        if staff.is_active:
+            return Response(
+                {"message": "Staff is already approved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        staff.is_active = True
+        staff.save(update_fields=["is_active"])
+
+        return Response({
+            "message": "Staff approved successfully.",
+            "id": staff.id,
+            "username": staff.username,
+            "role": staff.role,
+            "is_active": staff.is_active,
+        })
 
 class AdminRegisterView(viewsets.ModelViewSet):
     queryset=CustomUser.objects.filter(role ='ADMIN')
@@ -46,38 +76,58 @@ class AdminRegisterView(viewsets.ModelViewSet):
 
 class LoginView(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
-    authentication_classes=[]
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
-    throttle_scope ='login' #for custom thottle 
-    throttle_classes=[ScopedRateThrottle]
-    http_method_names = ['post']
+    throttle_scope = "login"
+    throttle_classes = [ScopedRateThrottle]
+    http_method_names = ["post"]
 
     def create(self, request, *args, **kwargs):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(request,username=username,password=password)
+        username = request.data.get("username")
+        password = request.data.get("password")
 
         if not username or not password:
-            return Response({
-                'message':'Username and Password are required'
-            },status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": "Username and password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        if user is not None:
-            if not user.is_active:
-                return Response(
-                    {'message': 'Account is inactive.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh':str(refresh),
-                'access':str(refresh.access_token),
-                'username':user.username,
-                'role':user.role
-            },status=status.HTTP_200_OK)
-        return Response({
-            'message':'invalid credentials!!!'
-        })
+        user = authenticate(
+            request,
+            username=username,
+            password=password,
+        )
+
+        if user is None:
+            return Response(
+                {"message": "Invalid credentials."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Do not issue tokens before approval.
+        if user.role == "STAFF" and not user.is_active:
+            return Response(
+                {"message": "Your staff account is waiting for admin approval."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not user.is_active:
+            return Response(
+                {"message": "Your account is inactive."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "username": user.username,
+                "role": user.role,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class Profile(viewsets.ModelViewSet):
     queryset=CustomUser.objects.all()
@@ -145,7 +195,7 @@ class UserListView(viewsets.ModelViewSet):
         user = self.get_object()
 
         role = request.data.get('role')
-        allowed_roles = ['CUSTOMER', 'STAFF', 'ADMIN']
+        allowed_roles = ['STAFF', 'ADMIN']
 
         if role not in allowed_roles:
             return Response(

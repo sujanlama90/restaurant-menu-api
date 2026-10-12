@@ -23,7 +23,7 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)  # Ensures Django handles password hashing
         user.save(using=self._db)
         return user
-
+ 
     def create_superuser(self, username, email=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -52,6 +52,7 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.CUSTOMER )
     objects = CustomUserManager()
     phone = models.CharField(max_length=20,blank=True,null=True)
+    is_approved = models.BooleanField(default=False)
     class Meta: constraints = [ models.UniqueConstraint( 
         Lower("email"),
         name="unique_customuser_email_ci" ) ]

@@ -23,6 +23,3 @@ class CartItem(models.Model):
                 name="unique_food_item_per_cart"
             )
         ]
-
-
-

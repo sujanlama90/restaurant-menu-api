@@ -15,7 +15,6 @@ class CartView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     throttle_scope ='cart' #for custom thottle 
     throttle_classes=[ScopedRateThrottle]
-
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):

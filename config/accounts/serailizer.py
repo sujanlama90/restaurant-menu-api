@@ -11,14 +11,7 @@ class CustomerRegisterSerailizer(serializers.ModelSerializer):
         if data['password'] != data['password1']:
             raise serializers.ValidationError('password and password1 doesnot match!!')
         return data
-
-    def create(self, validated_data):
-        validated_data.pop('password1')
-        return CustomUser.objects.create_user(**validated_data,role='CUSTOMER',
-        is_staff=False,
-        is_superuser=False,
-        )
-
+    
     def validate_email(self, value):
         value = value.strip().lower()
 
@@ -27,6 +20,13 @@ class CustomerRegisterSerailizer(serializers.ModelSerializer):
                 "This email is already registered."
             )
         return value
+    
+    def create(self, validated_data):
+        validated_data.pop('password1')
+        return CustomUser.objects.create_user(**validated_data,role='CUSTOMER',
+        is_staff=False,
+        is_superuser=False,
+        )
 
 class StaffRegisterSerailizer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True)
@@ -39,10 +39,6 @@ class StaffRegisterSerailizer(serializers.ModelSerializer):
             raise serializers.ValidationError('password and password1 doesnot match!!')
         return data
 
-    def create(self, validated_data):
-        validated_data.pop('password1')
-        return CustomUser.objects.create_user(**validated_data,role='STAFF',is_staff=True,is_superuser=False,)
-
     def validate_email(self, value):
         value = value.strip().lower()
 
@@ -51,6 +47,13 @@ class StaffRegisterSerailizer(serializers.ModelSerializer):
                 "This email is already registered."
             )
         return value
+
+    def create(self, validated_data):
+        validated_data.pop('password1')
+        return CustomUser.objects.create_user(**validated_data,role='STAFF',is_staff=False,
+                                              is_active=False,
+                                              is_superuser=False,)
+
 
 class AdminSerailizer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True)
@@ -62,11 +65,7 @@ class AdminSerailizer(serializers.ModelSerializer):
         if data['password'] != data['password1']:
             raise serializers.ValidationError('password and password1 doesnot match!!')
         return data
-
-    def create(self, validated_data):
-        validated_data.pop('password1')
-        return CustomUser.objects.create_superuser(**validated_data,role='ADMIN',is_superuser=True)
-
+    
     def validate_email(self, value):
         value = value.strip().lower()
 
@@ -75,6 +74,10 @@ class AdminSerailizer(serializers.ModelSerializer):
                 "This email is already registered."
             )
         return value
+
+    def create(self, validated_data):
+        validated_data.pop('password1')
+        return CustomUser.objects.create_superuser(**validated_data,role='ADMIN',is_superuser=True)
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
