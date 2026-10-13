@@ -1,42 +1,71 @@
 # Restaurant API
 
-A Django REST Framework backend for a restaurant ordering and review system with role-based access, menu management, cart handling, and JWT authentication.
+A Django REST Framework backend for a restaurant ordering system with role-based accounts, menu management, cart operations, and food reviews.
+
+## Overview
+
+This project exposes a REST API for a restaurant application where:
+
+- customers can create accounts and place items in a cart
+- staff accounts can manage menu categories and food items
+- admin users can manage roles and approve staff accounts
+- public users can browse active menu items and approved reviews
+- authenticated users can submit and view reviews
+
+## Tech stack
+
+- Python 3
+- Django 6.1
+- Django REST Framework
+- PostgreSQL
+- JWT authentication with Simple JWT
+- Django Filters
+- CORS headers
+- Swagger / ReDoc via drf-yasg
 
 ## Features
 
-- Customer, staff, and admin user roles
-- JWT-based authentication with refresh support
-- Menu categories and food items
-- Cart management for authenticated customers
-- Review submission and approval workflow
-- Filtering, search, ordering, and pagination
-- PostgreSQL database support
+- Role-based access control for CUSTOMER, STAFF, and ADMIN users
+- JWT login and token refresh flow
+- User registration for customer, staff, and admin accounts
+- Staff approval workflow before a staff account can log in
+- Menu categories and food items with availability checks
+- Cart management with add, update, and remove item actions
+- Review creation, approval, filtering, and search
+- Pagination and filtering support across list endpoints
+- Swagger documentation at runtime
 
 ## Project structure
 
 ```text
 restaurant_api/
-├── config/
-│   ├── accounts/
-│   ├── cart/
-│   ├── config/
-│   ├── menu/
-│   ├── reviews/
-│   ├── manage.py
-│   ├── requirements.txt
-│   └── db.sqlite3
-├── media/
+├── README.md
 ├── venv/
-└── README.md
+└── config/
+    ├── accounts/
+    ├── cart/
+    ├── config/
+    ├── menu/
+    ├── reviews/
+    ├── manage.py
+    ├── requirements.txt
+    └── media/
 ```
 
-> The Django project root is inside the `config` folder.
+> The Django project root is the `config/` directory.
 
----
+## Prerequisites
 
-## Installation
+Before you start, make sure the following are installed:
 
-### 1) Clone and enter the project
+- Python 3.10+
+- PostgreSQL server
+- pip
+- virtualenv (optional but recommended)
+
+## Setup
+
+### 1) Clone the project
 
 ```bash
 cd /path/to/restaurant_api
@@ -55,9 +84,9 @@ source venv/bin/activate
 pip install -r config/requirements.txt
 ```
 
-### 4) Configure environment variables
+### 4) Create environment variables
 
-Create a `.env` file in the `config` folder with values like:
+Create a `.env` file inside the Django project root (`config/.env`) with values similar to:
 
 ```env
 SECRET_KEY=your-secret-key
@@ -69,18 +98,30 @@ DB_HOST=localhost
 DB_PORT=5432
 ```
 
-The project uses `python-decouple` and reads these values in `config/config/settings.py`.
+The project reads these values in `config/config/settings.py` using `python-decouple`.
 
-### 5) Create the database
+### 5) Create the PostgreSQL database
 
-Make sure PostgreSQL is running and the database exists.
+Make sure PostgreSQL is running and a database exists:
+
+```sql
+CREATE DATABASE restaurant_db;
+```
+
+### 6) Run database migrations
 
 ```bash
 cd config
 python manage.py migrate
 ```
 
-### 6) Run the server
+### 7) Create a superuser
+
+```bash
+python manage.py createsuperuser
+```
+
+### 8) Start the development server
 
 ```bash
 python manage.py runserver 0.0.0.0:8000
@@ -92,58 +133,23 @@ The API will be available at:
 http://127.0.0.1:8000/
 ```
 
----
+## API documentation
 
-## Database migrations
+The project includes OpenAPI docs:
 
-To apply schema changes:
+- Swagger UI: `http://127.0.0.1:8000/swagger/`
+- ReDoc: `http://127.0.0.1:8000/redoc/`
+- JSON schema: `http://127.0.0.1:8000/swagger.json`
 
-```bash
-cd config
-python manage.py makemigrations
-python manage.py migrate
-```
+## Authentication
 
-To create a superuser:
+Authentication is handled with JWT. The project uses `rest_framework_simplejwt` and `JWTAuthentication`.
 
-```bash
-python manage.py createsuperuser
-```
-
----
-
-## JWT setup and authentication
-
-This project uses `djangorestframework_simplejwt`.
-
-### JWT settings
-
-From `config/config/settings.py`:
-
-```python
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-}
-```
-
-JWT is enabled globally in DRF:
-
-```python
-'DEFAULT_AUTHENTICATION_CLASSES': [
-    'rest_framework.authentication.TokenAuthentication',
-    'rest_framework.authentication.BasicAuthentication',
-    'rest_framework.authentication.SessionAuthentication',
-    'rest_framework_simplejwt.authentication.JWTAuthentication',
-],
-```
-
-### Login and token generation
-
-The app provides a custom login endpoint:
+### Login
 
 ```http
 POST /api/auth/login/
+Content-Type: application/json
 ```
 
 Request body:
@@ -159,8 +165,8 @@ Example response:
 
 ```json
 {
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh": "<refresh-token>",
+  "access": "<access-token>",
   "username": "admin",
   "role": "ADMIN"
 }
@@ -170,51 +176,38 @@ Example response:
 
 ```http
 POST /api/token/refresh/
+Content-Type: application/json
 ```
-
-Request body:
 
 ```json
 {
-  "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-Example response:
-
-```json
-{
-  "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "refresh": "<refresh-token>"
 }
 ```
 
 ### Authorization header
 
-For protected routes:
-
 ```http
-Authorization: Bearer <access_token>
+Authorization: Bearer <access-token>
 ```
 
----
+## Core API endpoints
 
-## API endpoints
-
-### 1) Authentication and users
+### Authentication and users
 
 | Method | Endpoint                       | Description                       |
 | ------ | ------------------------------ | --------------------------------- |
-| POST   | `/api/auth/register/customer/` | Create a customer user            |
-| POST   | `/api/auth/register/staff/`    | Create a staff user               |
-| POST   | `/api/auth/register/admin/`    | Create an admin user              |
-| POST   | `/api/auth/login/`             | Login and get JWT tokens          |
-| GET    | `/api/auth/profile/`           | Get logged-in user profile        |
-| PATCH  | `/api/auth/profile/`           | Update logged-in user profile     |
+| POST   | `/api/auth/register/customer/` | Register a customer               |
+| POST   | `/api/auth/register/staff/`    | Register a staff member           |
+| POST   | `/api/auth/register/admin/`    | Register an admin                 |
+| POST   | `/api/auth/login/`             | Login and receive JWT tokens      |
+| GET    | `/api/auth/profile/`           | View the logged-in user profile   |
+| PATCH  | `/api/auth/profile/`           | Update the logged-in user profile |
 | GET    | `/api/auth/users/`             | List users (admin only)           |
-| PATCH  | `/api/auth/users/<id>/role/`   | Update a user's role (admin only) |
-| POST   | `/api/token/refresh/`          | Refresh access token              |
+| PATCH  | `/api/auth/users/<id>/role/`   | Update a user role (admin only)   |
+| POST   | `/api/token/refresh/`          | Refresh the JWT access token      |
 
-#### Example: register customer
+Example customer registration:
 
 ```http
 POST /api/auth/register/customer/
@@ -223,8 +216,6 @@ Content-Type: application/json
 
 ```json
 {
-  "first_name": "John",
-  "last_name": "Doe",
   "username": "johndoe",
   "email": "john@example.com",
   "phone": "9800000000",
@@ -233,21 +224,101 @@ Content-Type: application/json
 }
 ```
 
-#### Example: profile response
+### Menu
+
+| Method | Endpoint                     | Description                         |
+| ------ | ---------------------------- | ----------------------------------- |
+| GET    | `/api/menu/categories/`      | List categories                     |
+| POST   | `/api/menu/categories/`      | Create a category (staff/admin)     |
+| GET    | `/api/menu/categories/<id>/` | Get category details                |
+| PATCH  | `/api/menu/categories/<id>/` | Update category (staff/admin)       |
+| DELETE | `/api/menu/categories/<id>/` | Soft-delete category (staff/admin)  |
+| GET    | `/api/menu/foods/`           | List food items                     |
+| POST   | `/api/menu/foods/`           | Create food item (staff/admin)      |
+| GET    | `/api/menu/foods/<id>/`      | Get food details                    |
+| PATCH  | `/api/menu/foods/<id>/`      | Update food item (staff/admin)      |
+| DELETE | `/api/menu/foods/<id>/`      | Soft-delete food item (staff/admin) |
+
+Food items support filtering and search via query parameters such as:
+
+```http
+GET /api/menu/foods/?category=1&food_type=VEGETARIAN&search=pizza&ordering=price
+```
+
+### Cart
+
+| Method | Endpoint                              | Description                             |
+| ------ | ------------------------------------- | --------------------------------------- |
+| GET    | `/api/cart/`                          | Get the current user's cart             |
+| POST   | `/api/cart/`                          | Create or fetch the current user's cart |
+| POST   | `/api/cart/item/`                     | Add an item to the cart                 |
+| PATCH  | `/api/cart/update-item/`              | Update cart item quantity               |
+| DELETE | `/api/cart/remove-item/?item_id=<id>` | Remove a cart item                      |
+
+Example add item request:
+
+```http
+POST /api/cart/item/
+Content-Type: application/json
+```
 
 ```json
 {
-  "id": 1,
-  "username": "johndoe",
-  "first_name": "John",
-  "last_name": "Doe",
-  "email": "john@example.com",
-  "phone": "9800000000",
-  "role": "CUSTOMER"
+  "food_item": 1,
+  "quantity": 2
 }
 ```
 
-### 2) Menu
+### Reviews
+
+| Method | Endpoint                     | Description                    |
+| ------ | ---------------------------- | ------------------------------ |
+| GET    | `/api/reviews/`              | List reviews                   |
+| POST   | `/api/reviews/`              | Create a review                |
+| GET    | `/api/reviews/<id>/`         | Get a review                   |
+| PATCH  | `/api/reviews/<id>/`         | Update your own review         |
+| DELETE | `/api/reviews/<id>/`         | Delete your own review         |
+| POST   | `/api/reviews/<id>/approve/` | Approve a review (staff/admin) |
+
+Approved reviews are visible to the public; staff and admins can view all reviews, while customers can see approved reviews and their own review submissions.
+
+## Role behavior
+
+- CUSTOMER: can register, log in, view own profile, add items to cart, and submit reviews
+- STAFF: can manage menu categories and food items; requires admin approval before login
+- ADMIN: can manage users, assign roles, and approve staff reviews and staff account access
+
+## Useful commands
+
+Apply migrations:
+
+```bash
+cd config
+python manage.py makemigrations
+python manage.py migrate
+```
+
+Run tests:
+
+```bash
+python manage.py test
+```
+
+Start the development server:
+
+```bash
+python manage.py runserver
+```
+
+## Notes
+
+- The project uses PostgreSQL by default in `config/config/settings.py`.
+- Some endpoints are intentionally restricted by role and authentication.
+- For local development, keep the `.env` file out of version control.
+
+## License
+
+This project is intended for learning and local development purposes unless otherwise specified by the project owner.
 
 | Method    | Endpoint                     | Description                         |
 | --------- | ---------------------------- | ----------------------------------- |
